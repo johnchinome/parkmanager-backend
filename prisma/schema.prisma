@@ -12,3 +12,102 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cellphone String   @unique
+  email     String?   @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parkingLots ParkingLot[] @relation("UserParkingLots")
+  subscriptions Subscription[]
+}
+
+model ParkingLot {
+  id          Int      @id @default(autoincrement())
+  name        String
+  location    String
+  ownerId     Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner   User      @relation("UserParkingLots", fields: [ownerId], references: [id])
+  spaces  Space[]
+  rates   Rate[]
+  entries EntryExit[]
+}
+
+model Space {
+  id            Int       @id @default(autoincrement())
+  type          VehicleType
+  isOccupied    Boolean   @default(false)
+  parkingLotId  Int
+
+  parkingLot ParkingLot @relation(fields: [parkingLotId], references: [id])
+}
+
+model Vehicle {
+  id          Int       @id @default(autoincrement())
+  plate       String    @unique
+  type        VehicleType
+  ownerName   String
+  createdAt   DateTime @default(now())
+  entries     EntryExit[]
+}
+
+model EntryExit {
+  id            Int       @id @default(autoincrement())
+  vehicleId     Int
+  parkingLotId  Int
+  entryTime     DateTime  @default(now())
+  exitTime      DateTime?
+  totalToPay    Float?
+  discount      Float     @default(0)
+
+  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
+  parkingLot  ParkingLot @relation(fields: [parkingLotId], references: [id])
+}
+
+model Rate {
+  id           Int       @id @default(autoincrement())
+  vehicleType  VehicleType
+  pricePerHour Float
+  parkingLotId Int
+
+  parkingLot ParkingLot @relation(fields: [parkingLotId], references: [id])
+}
+
+model Subscription {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  type         SubscriptionType
+  startDate    DateTime
+  endDate      DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum VehicleType {
+  AUTOMOBILE
+  MOTORCYCLE
+  BICYCLE
+  TRUCK
+  VAN
+  SCOOTER
+}
+
+enum SubscriptionType {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+}

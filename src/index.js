@@ -17,3 +17,15 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
+
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
+
+app.get("/ping-db", async (req, res) => {
+  try {
+    const users = await prisma.user.findMany();
+    res.json({ status: "ok", users });
+  } catch (error) {
+    res.status(500).json({ error: "No se pudo conectar a la base de datos" });
+  }
+});
