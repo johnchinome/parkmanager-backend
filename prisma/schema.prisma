@@ -14,7 +14,7 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int      @id @default(autoincrement()) 
   name      String
   cellphone String   @unique
   email     String?   @unique
@@ -25,6 +25,15 @@ model User {
 
   parkingLots ParkingLot[] @relation("UserParkingLots")
   subscriptions Subscription[]
+  vehicles     Vehicle[]
+
+  UserParkingLotAccess UserParkingLotAccess[]
+
+  EntryExit EntryExit[]
+
+  PaymentOrder PaymentOrder[]
+
+  AuditLog AuditLog[]
 }
 
 model ParkingLot {
@@ -39,7 +48,19 @@ model ParkingLot {
   spaces  Space[]
   rates   Rate[]
   entries EntryExit[]
+
+  UserParkingLotAccess UserParkingLotAccess[]
 }
+
+model UserParkingLotAccess {
+  id            Int @id @default(autoincrement())
+  userId        Int
+  parkingLotId  Int
+
+  user         User        @relation(fields: [userId], references: [id])
+  parkingLot   ParkingLot  @relation(fields: [parkingLotId], references: [id])
+}
+
 
 model Space {
   id            Int       @id @default(autoincrement())
@@ -54,15 +75,18 @@ model Vehicle {
   id          Int       @id @default(autoincrement())
   plate       String    @unique
   type        VehicleType
-  ownerName   String
+  userId      Int
   createdAt   DateTime @default(now())
   entries     EntryExit[]
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model EntryExit {
   id            Int       @id @default(autoincrement())
   vehicleId     Int
   parkingLotId  Int
+  registeredBy  Int
   entryTime     DateTime  @default(now())
   exitTime      DateTime?
   totalToPay    Float?
@@ -70,6 +94,7 @@ model EntryExit {
 
   vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
   parkingLot  ParkingLot @relation(fields: [parkingLotId], references: [id])
+  registeredByUser User      @relation(fields: [registeredBy], references: [id])
 }
 
 model Rate {
@@ -91,8 +116,36 @@ model Subscription {
   user User @relation(fields: [userId], references: [id])
 }
 
+model PaymentOrder {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  reference     String    @unique
+  subscriptionType SubscriptionType
+  amount        Int       // en pesos
+  status        PaymentStatus @default(PENDING)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String
+  entity    String?
+  entityId  Int?
+  metadata  Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
 enum Role {
   ADMIN
+  OWNER
   EMPLOYEE
 }
 
@@ -110,4 +163,11 @@ enum SubscriptionType {
   QUARTERLY
   SEMIANNUAL
   ANNUAL
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  FAILED
 }

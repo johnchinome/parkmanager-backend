@@ -1,31 +1,42 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import dotenv from "dotenv";
+import userRoutes from "./routes/user.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+import parkingLotRoutes from "./routes/parkingLot.routes.js";
+import spaceRoutes from "./routes/space.routes.js";
+import rateRoutes from "./routes/rate.routes.js";
+import entryRoutes from "./routes/entry.routes.js";
+import subscriptionRoutes from "./routes/subscription.routes.js";
+import userParkingAccessRoutes from "./routes/userParkingAccess.routes.js";
+import vehicleRoutes from "./routes/vehicle.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
+import { auditLogger } from "./middlewares/auditLogger.js";
+import auditRoutes from "./routes/audit.routes.js";
+import { errorLogger } from "./middlewares/errorLogger.js";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
-app.use(cors());
 app.use(express.json());
+app.use(auditLogger);
+app.use("/api/audits", auditRoutes);
 
-// Ruta de prueba
-app.get("/", (req, res) => {
-  res.send("API ParkManager en funcionamiento 🚗");
-});
+// Rutas
+app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/parking-lots", parkingLotRoutes);
+app.use("/api", spaceRoutes);
+app.use("/api", rateRoutes);
+app.use("/api", entryRoutes);
+app.use("/api", subscriptionRoutes);
+app.use("/api", userParkingAccessRoutes);
+app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-
-app.get("/ping-db", async (req, res) => {
-  try {
-    const users = await prisma.user.findMany();
-    res.json({ status: "ok", users });
-  } catch (error) {
-    res.status(500).json({ error: "No se pudo conectar a la base de datos" });
-  }
-});
+app.use(errorLogger);
