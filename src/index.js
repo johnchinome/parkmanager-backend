@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 import userRoutes from "./routes/user.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import parkingLotRoutes from "./routes/parkingLot.routes.js";
@@ -15,11 +16,16 @@ import auditRoutes from "./routes/audit.routes.js";
 import { errorLogger } from "./middlewares/errorLogger.js";
 
 dotenv.config();
+const corsOptions = {
+  origin: ["http://127.0.0.1:5500", "http://localhost:5500"],
+  credentials: true,
+};
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(cors(corsOptions));
 app.use(auditLogger);
 app.use("/api/audits", auditRoutes);
 

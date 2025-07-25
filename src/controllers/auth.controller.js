@@ -2,6 +2,7 @@ import prisma from "../prisma/client.js";
 import { comparePassword } from "../utils/bcrypt.js";
 import jwt from "jsonwebtoken";
 import { generateToken } from "../utils/jwt.js";
+import { hashPassword } from "../utils/bcrypt.js";
 
 export const login = async (req, res) => {
   try {
@@ -39,7 +40,36 @@ export const authenticateToken = (req, res, next) => {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403);
-    req.user = user; // 👈 Asegúrate de que aquí venga el `id` y `role`
+    req.user = user;
     next();
   });
+};
+
+export const register = async (req, res) => {
+  try {
+    const { name, cellphone, email, password } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { cellphone } });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashed = await hashPassword(password);
+    const user = await prisma.user.create({
+      data: {
+        name,
+        cellphone,
+        email,
+        password: hashed,
+        role: "CLIENT", // Rol fijo para registro libre
+      },
+    });
+
+    const token = generateToken(user);
+    res.status(201).json({ token, user });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error registering user", error: error.message });
+  }
 };

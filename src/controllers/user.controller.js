@@ -5,12 +5,9 @@ import bcrypt from "bcrypt";
 
 export const createUser = async (req, res) => {
   try {
-    const { name, cellphone, email, password } = req.body;
+    const { name, cellphone, email, password, role = "EMPLOYEE" } = req.body;
 
-    const existingUser = await prisma.user.findUnique({
-      where: { cellphone },
-    });
-
+    const existingUser = await prisma.user.findUnique({ where: { cellphone } });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists." });
     }
@@ -18,7 +15,13 @@ export const createUser = async (req, res) => {
     const hashed = await hashPassword(password);
 
     const user = await prisma.user.create({
-      data: { name, cellphone, email, password: hashed },
+      data: {
+        name,
+        cellphone,
+        email,
+        password: hashed,
+        role,
+      },
     });
 
     res.status(201).json({ message: "User created", user });

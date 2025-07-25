@@ -1,4 +1,4 @@
-import { prisma } from "../prisma/client.js";
+import prisma from "../prisma/client.js";
 
 export const auditLogger = async (req, res, next) => {
   res.on("finish", async () => {
